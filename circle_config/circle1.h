@@ -8,7 +8,8 @@ using UINT8 = unsigned char;
 using UINT32 = unsigned int;
 const int WIDTH = 640;
 const int HEIGHT = 480;
-const int MAG_THRESH = 80;
+const int MAG_THRESH = 50;
+const int MIN_RADIUS = 20;
 
 typedef struct Circle {
     cv::Point2f  center;

@@ -380,8 +380,6 @@ int circle_detection_config(const UINT8 *yuv, std::vector<Result_Circle>& circle
  //   tt.start();
     /* 需要遍历所有可能的半径组合来检测出所有的圆，这样才能检测出同心圆 */
     /* 半径最大为1/2 * width, 最小为10像素， step为10像素 */
-    int step = width / 30;
-//    int step = 10;
 
     std::vector<Circle> total_circles;
 
@@ -391,9 +389,10 @@ int circle_detection_config(const UINT8 *yuv, std::vector<Result_Circle>& circle
 
 
     int num_circles = 0, num_total_circles = 0;
-    for (int r = 5; r < (int)(1.0 / 2 * width - 10); r += 10) {
+    int step = 5;
+    for (int r = MIN_RADIUS + step; r < (int)(1.0 / 2 * width - 10); r += step * 2) {
         std::vector<Circle> circles;
-        hough(circle_runtime_param, 8, r - 5, r + 5, 8, circles, &num_circles);
+        hough(circle_runtime_param, 8, r - step, r + step, 8, circles, &num_circles);
         for (auto iter = circles.cbegin(); iter != circles.cend(); ++iter) {
             total_circles.push_back(*iter);
             num_total_circles++;
