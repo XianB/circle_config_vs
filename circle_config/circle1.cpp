@@ -35,6 +35,7 @@ static bool is_circle(Point p, int radius, Circle_runtime_param &circle_runtime_
 
 //        printf("%lf %lf \n", angle, radial_direction);
         /* 若方向相差角度为30度以内：30 * PI / 180 == 0.52, 角度如果小的话不能检测出不规整的圆 */
+		// 注释：0.17代表弧度值（10度），偏差的弧度值（容忍度）
         if (fabs(angle - radial_direction) < 0.17 || fabs(angle - radial_direction1) < 0.17) {
             count++;
         }
@@ -42,6 +43,7 @@ static bool is_circle(Point p, int radius, Circle_runtime_param &circle_runtime_
     *score = 1.0 * count / 360;
     /* 拟合60%的点 */
     /* 至少拟合一半的点数 */
+	// 注释：需要测试配置
     std::cout << "count " << count << std::endl;
     return count > 216;
 }
@@ -57,6 +59,8 @@ static void remove_duplicates(std::vector<Circle> &circles)
         for (auto next = iter + 1; next != circles.end(); ++next) {
             int x1 = next->center.x, y1 = next->center.y, r1 = next->radius;
             double s1 = next->score;
+
+			// 注释：需要测试配置
             if ((abs(x0 - x1) < 8 && abs(y0 - y1) < 8) && abs(r0 - r1) < 8) {
                 if (s0 > s1) {
                     next->center.x = 0;
@@ -116,10 +120,10 @@ static void prepare_data(Circle_runtime_param &circle_runtime_param)
         }
     }
   //  Dilation(circle_runtime_param.mag, circle_runtime_param.mag, 3);
-    //cv::imshow("gray", circle_runtime_param.img_gray);
-    //cv::imshow("mag", circle_runtime_param.mag);
-    //cv::imshow("ang", circle_runtime_param.ang);
-    //cv::waitKey(0);
+    cv::imshow("gray", circle_runtime_param.img_gray);
+    cv::imshow("mag", circle_runtime_param.mag);
+    cv::imshow("ang", circle_runtime_param.ang);
+    cv::waitKey(0);
     std::cout << "ct..:" << ct << std::endl;
 }
 

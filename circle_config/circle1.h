@@ -8,6 +8,7 @@ using UINT8 = unsigned char;
 using UINT32 = unsigned int;
 const int WIDTH = 640;
 const int HEIGHT = 480;
+// 注释： 需要测试配置
 const int MAG_THRESH = 50;
 const int MIN_RADIUS = 20;
 
