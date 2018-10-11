@@ -12,7 +12,8 @@
 
 using namespace cv;
 
-int MAG_THRESH = 140;
+int MAG_THRESH = 100;
+const int CANNY_THRESHOLD = 50;
 
 /* 八个方向上的圆周是不是都是边缘点，他们的梯度是不是都是半径的径向 */
 static bool is_circle(Point p, int radius, Circle_runtime_param &circle_runtime_param, double *score, int sensi)
@@ -47,13 +48,13 @@ static bool is_circle(Point p, int radius, Circle_runtime_param &circle_runtime_
 		}
 	}
 	*score = 1.0 * count / 360;
-	/* 拟合60%的点 */
+	/* 拟合70%的点 */
 	/* 至少拟合一半的点数 */
 	// 注释：需要测试配置
 	/*std::cout << "角度偏差的容忍度（0.085~0.26）： " << angle_bias << std::endl;;
 	std::cout << "传入的灵敏度" << sensi << std::endl;
 	std::cout << "count " << count << std::endl;*/
-	return count > 216;
+	return count > 200;
 }
 
 /* 判断不同半径情况下检测出来的圆是不是已经检测过了，半径是否类似，圆心位置是否类似 */
@@ -109,26 +110,44 @@ static void prepare_data(Circle_runtime_param &circle_runtime_param, int MAG_THR
 										  //    float k1 [] = {-1,-2,-1,0,0,0,1,2,1}; //{-2,-4,-2,0,0,0,2,4,2};//{-1,-2,-1,0,0,0,1,2,1};    //sobel kernal dx
 										  //    float k2 [] = {-1,0,1,-2,0,2,-1,0,1};//{-2,0,2,-4,0,4,-2,0,2};//{-1,0,1,-2,0,2,-1,0,1};    //sobel kernal dy
 
-	cv::Sobel(circle_runtime_param.img_gray, circle_runtime_param.sdx, CV_16S, 1, 0, 3);
-	cv::Sobel(circle_runtime_param.img_gray, circle_runtime_param.sdy, CV_16S, 0, 1, 3);
+	cv::Sobel(circle_runtime_param.img_gray, circle_runtime_param.sdx, CV_16S, 1, 0);
+	cv::Sobel(circle_runtime_param.img_gray, circle_runtime_param.sdy, CV_16S, 0, 1);
+	//cv::phase(circle_runtime_param.sdx, circle_runtime_param.sdy, circle_runtime_param.ang, true);
+	//cv::Mat tmp_canny;
+	//cv::Canny(circle_runtime_param.img_gray, tmp_canny, CANNY_THRESHOLD, CANNY_THRESHOLD*3);
+	//cv::imshow("tmp_canny", tmp_canny);
+	//cv::waitKey(0);
 
+	//circle_runtime_param.mag = tmp_canny.clone();
+	
 	int ct = 0;
 	for (int i = 0; i<circle_runtime_param.img_gray.rows; i++) {
 		for (int j = 0; j<circle_runtime_param.img_gray.cols; j++) {
+			
 			acc_dx = (short)circle_runtime_param.sdx.at<short>(i, j);
 			acc_dy = (short)circle_runtime_param.sdy.at<short>(i, j);
+
 			// TODO 这里直接用二值化不行吗, 不行的话这里的220是如何设置的？
 			circle_runtime_param.mag.at<uchar>(i, j) = (sqrt(acc_dy*acc_dy + acc_dx*acc_dx)) > MAG_THRESH ? 255 : 0;
-			if (sqrt(acc_dy*acc_dy + acc_dx*acc_dx)> MAG_THRESH) {
-				++ct;
+			
+			// 对于不满足阈值的点的dx和dy进行一个置0处理
+			if (circle_runtime_param.mag.at<uchar>(i, j) == 255) {
+				circle_runtime_param.ang.at<float>(i, j) = atan2f(acc_dy, acc_dx);
 			}
-			/*
-			* TODO dist可以利用查表实现，如果acc_dy和acc_dx能够归一化到8位即可
-			* */
-			circle_runtime_param.ang.at<float>(i, j) = atan2f(acc_dy, acc_dx);
+			else {
+				circle_runtime_param.sdx.at<short>(i, j) = 0;
+				circle_runtime_param.sdy.at<short>(i, j) = 0;
+				circle_runtime_param.ang.at<float>(i, j) = 0;
+			}
+
+			
+			//TODO dist可以利用查表实现，如果acc_dy和acc_dx能够归一化到8位即可
+			
+			
 			// printf("dist : %f \n", dist.at<float>(i,j) / 3.14159265f * 180 );
 		}
 	}
+	
 	//  Dilation(circle_runtime_param.mag, circle_runtime_param.mag, 3);
 	//cv::imshow("gray", circle_runtime_param.img_gray);
 	//cv::imshow("mag", circle_runtime_param.mag);
@@ -164,8 +183,11 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 	*/
 
 
-	std::cout << "start a new hough" << std::endl;
+	//std::cout << "start a new hough" << std::endl;
 	Mat img_data = circle_runtime_param.mag, ang = circle_runtime_param.ang, sdx = circle_runtime_param.sdx, sdy = circle_runtime_param.sdy;
+
+	//cv::imshow("hough imgdata", img_data);
+	//cv::waitKey(0);
 
 	Region region = circle_runtime_param.region;
 	int radiusRange = maxRadius - minRadius;
@@ -184,7 +206,7 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 	int DEPTH = radiusRange;
 
 	int ***H;
-	std::cout << "allocating H" << std::endl;
+	//std::cout << "allocating H" << std::endl;
 
 	// Allocate memory
 	/* 这里没必要设置depth为最大半径，只需要设置radiusRange范围这么大的depth即可 */
@@ -200,7 +222,7 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 			}
 		}
 	}
-	std::cout << "allocating done." << std::endl;
+	//std::cout << "allocating done." << std::endl;
 
 	// 初始化H中的值 和 初始化candidates中的值
 	for (int i = 0; i < HEIGHT; ++i) {
@@ -225,14 +247,14 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 	// TimeTracker t2;
 	// t2.start();
 	int ct = 0, ct2 = 0;
-	std::cout << "before loop" << std::endl;
+	//std::cout << "before loop" << std::endl;
 
 	for (int y = regiony; y >= 0 && y < img_data.rows && y<region_height + regiony; y++)
 	{
 		for (int x = regionx; x >= 0 && x<img_data.cols && x < region_width + regionx; x++)
 		{
 			// printf("data point : %f\n", img_data.at<float>(y,x));
-			if (img_data.at<uchar>(y, x) > MAG_THRESH)  //threshold image
+			if (img_data.at<uchar>(y, x) == 255)  //threshold image
 			{
 				ct++;
 				double theta = ang.at<float>(y, x);
@@ -258,8 +280,8 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 			}
 		}
 	}
-	std::cout << "after loop" << std::endl;
-	std::cout << "ct: " << ct << "ct2: " << ct2 << std::endl;
+	//std::cout << "after loop" << std::endl;
+	//std::cout << "ct: " << ct << "ct2: " << ct2 << std::endl;
 	//    std::out << " numof candidates: " <<  numof_candidates << std::endl;
 	// t2.stop();
 	//  std::cout << "duration t2: " << t2.duration() << std::endl;
@@ -286,7 +308,7 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 	int count = 0;
 	//   TimeTracker t3;
 	//   t3.start();
-	std::cout << "candidates: " << numof_candidates << std::endl;
+	//std::cout << "candidates: " << numof_candidates << std::endl;
 	//    for (int i = 0; i < numof_candidates; ++i) {
 	//        std::cout << "candidiates " << i << ": " << candidates[i][0] << " " << candidates[i][1] << " " << candidates[i][2] << std::endl;
 	//    }
@@ -318,6 +340,7 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 				break;
 			}
 		}
+	
 		/* 如果新的这个圆不是在原来的圆附近，那么将这个新的圆加入vector中 */
 		if (i == number_of_best_cirles) {
 			bestCircles[i] = circle;
@@ -325,7 +348,7 @@ static void hough(Circle_runtime_param &circle_runtime_param, int sensi, double 
 		}
 	}
 
-	std::cout << "number of best circles" << number_of_best_cirles << std::endl;
+	//std::cout << "number of best circles" << number_of_best_cirles << std::endl;
 
 	//  t3.stop();
 	//   std::cout << "duration t3: " << t3.duration() << std::endl;
@@ -403,6 +426,7 @@ int circle_detection_config(const UINT8 *yuv, std::vector<Result_Circle>& circle
 	circle_runtime_param.mag.create(image.rows, image.cols, CV_8UC1);
 	circle_runtime_param.ang.create(image.rows, image.cols, CV_32FC1);
 	circle_runtime_param.img_gray = image;
+
 #endif
 	// TimeTracker tt;
 	// tt.start();
@@ -433,18 +457,18 @@ int circle_detection_config(const UINT8 *yuv, std::vector<Result_Circle>& circle
 
 	for (int r = MIN_RADIUS + step; r < (int)(1.0 / 2 * width - 10); r += step * 2) {
 		std::vector<Circle> circles;
-		hough(circle_runtime_param, sensi, 8, r - step, r + step, 8, circles, &num_circles);
+		hough(circle_runtime_param, sensi, 9, r - step, r + step, 1, circles, &num_circles);
 		for (auto iter = circles.cbegin(); iter != circles.cend(); ++iter) {
 			total_circles.push_back(*iter);
 			num_total_circles++;
 		}
-		std::cout << "circles nums: " << circles.size() << std::endl;
+		//std::cout << "circles nums: " << circles.size() << std::endl;
 	}
 
-	std::cout << "hough done, total circles num: " << total_circles.size() << std::endl;
+	//std::cout << "hough done, total circles num: " << total_circles.size() << std::endl;
 
 	remove_duplicates(total_circles);
-	std::cout << "after remove duplicates,  total circles num: " << total_circles.size() << std::endl;
+	//std::cout << "after remove duplicates,  total circles num: " << total_circles.size() << std::endl;
 	for (auto iter = total_circles.begin(); iter != total_circles.end(); ++iter) {
 		int lineThickness = 2;
 		int lineType = 10;
@@ -456,7 +480,7 @@ int circle_detection_config(const UINT8 *yuv, std::vector<Result_Circle>& circle
 		circles1.push_back(rc);
 	}
 
-	std::cout << "result circles: " << circles1.size() << std::endl;
+	//std::cout << "result circles: " << circles1.size() << std::endl;
 #if 1
 	for (auto iter = circles1.begin(); iter != circles1.end(); ++iter) {
 		int lineThickness = 2;

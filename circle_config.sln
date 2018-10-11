@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "circle_config", "circle_config\circle_config.vcxproj", "{AF4585B9-34CA-4FCA-BD91-E874FFF3C2EE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "circle_config_test", "circle_config_test\circle_config_test.vcxproj", "{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,14 +21,6 @@ Global
 		{AF4585B9-34CA-4FCA-BD91-E874FFF3C2EE}.Release|x64.Build.0 = Release|x64
 		{AF4585B9-34CA-4FCA-BD91-E874FFF3C2EE}.Release|x86.ActiveCfg = Release|Win32
 		{AF4585B9-34CA-4FCA-BD91-E874FFF3C2EE}.Release|x86.Build.0 = Release|Win32
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Debug|x64.ActiveCfg = Debug|x64
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Debug|x64.Build.0 = Debug|x64
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Debug|x86.ActiveCfg = Debug|Win32
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Debug|x86.Build.0 = Debug|Win32
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Release|x64.ActiveCfg = Release|x64
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Release|x64.Build.0 = Release|x64
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Release|x86.ActiveCfg = Release|Win32
-		{6FFE3676-5DEF-4E7B-AF01-74D54BE7636C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
